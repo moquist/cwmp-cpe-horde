@@ -1,0 +1,30 @@
+{:paths ["src/clojure"],
+ :deps
+ {clj-http/clj-http {:mvn/version "3.13.0"},
+  clojure.java-time/clojure.java-time {:mvn/version "1.4.2"},
+  com.stuartsierra/component {:mvn/version "1.1.0"},
+  com.taoensso/timbre {:mvn/version "6.5.0"},
+  org.clojure/clojure {:mvn/version "1.12.0"},
+  org.clojure/core.async {:mvn/version "1.7.701"}
+  org.clojure/data.xml {:mvn/version "0.0.8"}
+  viesti/timbre-json-appender {:mvn/version "0.2.13"}},
+ :aliases
+ {:cider-nrepl {:extra-deps {cider/cider-nrepl {:mvn/version "0.47.1"}}},
+  :clj-kondo.configs
+  {:extra-deps {io.github.clj-kondo/config-org.clj-commons-claypoole {:mvn/version "1.0.0"}}},
+  :dev {:extra-paths ["test/clojure"]},
+  :kaocha
+  {:extra-deps
+   {lambdaisland/kaocha {:mvn/version "1.88.1376"}
+    nubank/matcher-combinators {:mvn/version "3.9.1", :exclusions [midje/midje]}
+    ;; make --watch quiet
+    ;; lambdaisland/kaocha depends on nextjournal/beholder for directory watching,
+    ;; which depends on io.methvin/directory-watcher, which uses sl4j for logging
+    ;; So, include org.slf4j/slf4j-nop to satsify slf4j
+    ;; See https://www.slf4j.org/codes.html#StaticLoggerBinder for details
+    org.slf4j/slf4j-nop {:mvn/version "2.0.13"}},
+   :jvm-opts ["-Dclojure.spec.check-asserts=true"],
+   :main-opts ["-m" "kaocha.runner" "--config-file" ".kaocha/tests.edn"]},
+  :test
+  {:extra-paths ["test/clojure"],
+   :extra-deps {nubank/matcher-combinators {:mvn/version "3.9.1", :exclusions [midje/midje]}}}}}
