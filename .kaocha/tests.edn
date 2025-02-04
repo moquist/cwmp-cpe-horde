@@ -1,0 +1,15 @@
+#kaocha/v1
+ {:tests [{:id :cwmp-client, :test-paths ["test/clojure"]}]
+  :kaocha/fail-fast? true
+  :color? true
+  :reporter [kaocha.report.progress/report]
+  :plugins [:kaocha.plugin/randomize
+            :kaocha.plugin/filter
+            :kaocha.plugin/capture-output
+            :kaocha.plugin/profiling
+            :kaocha.plugin/hooks]
+
+  :kaocha.plugin.randomize/seed 990716166
+  :kaocha.plugin.randomize/randomize? true
+  :kaocha.plugin.profiling/count 3
+  :kaocha.plugin.profiling/profiling? true}
