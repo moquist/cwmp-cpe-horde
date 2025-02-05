@@ -5,7 +5,6 @@
   com.stuartsierra/component {:mvn/version "1.1.0"},
   com.taoensso/timbre {:mvn/version "6.5.0"},
   org.clojure/clojure {:mvn/version "1.12.0"},
-  org.clojure/core.async {:mvn/version "1.7.701"}
   org.clojure/data.xml {:mvn/version "0.0.8"}
   viesti/timbre-json-appender {:mvn/version "0.2.13"}},
  :aliases
