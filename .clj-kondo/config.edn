@@ -1,0 +1,15 @@
+{:lint-as
+ {clojure.test.check.clojure-test/defspec clojure.core/def
+  clojure.test.check.properties/for-all clojure.core/let
+  io.viasat.adm.api.component.test-elf/with-system clojure.core/let}
+ :linters {:consistent-alias
+           {:aliases {clojure.data data
+                      clojure.spec.alpha s
+                      clojure.string str
+                      io.viasat.adm.api.livespec livespec
+                      taoensso.timbre log
+                      viasat.path-registry reg}}
+           :unsorted-required-namespaces {:level :warning}
+           :unresolved-symbol {:exclude [(clojure.test/is [match? thrown-match?])]}
+           :warn-on-reflection {:warn-only-on-interop true
+                                :level :warning}}}
