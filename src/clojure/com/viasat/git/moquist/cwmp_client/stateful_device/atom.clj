@@ -236,7 +236,7 @@
   (stop [component]
     (doseq [[_mac-addr device] @devices]
       (component/stop device))
-    (dissoc component :devices))
+    (assoc component :devices nil))
 
   stateful-device-set/StatefulDeviceSet
   (-get-device [_ device-id]
