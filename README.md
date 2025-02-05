@@ -36,6 +36,15 @@ Run a horde of CWMP clients:
 CONFIG_FILE_PATH=config.edn ./mgr run
 ```
 
+Your horde of CWMP clients will show up in the ACS as devices with MAC addresses numbered counting up from the OUI in your config file.
+For example, if your OUI is `FEFEFE` and you specify `:instance-count 3`, then the following devices will be registered with your ACS:
+
+```
+FEFEFE000000
+FEFEFE000001
+FEFEFE000002
+```
+
 ## REPL
 
 See the `(comment ...)` at the end of `src/clojure/com/viasat/git/moquist/cwmp_client/main.clj` for some ready-to-go, basic REPL interaction.
