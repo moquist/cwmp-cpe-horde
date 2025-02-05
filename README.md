@@ -54,7 +54,6 @@ See the `(comment ...)` at the end of `src/clojure/com/viasat/git/moquist/cwmp_c
 * Make the `PeriodicInformInterval` multiplier configurable instead of hard-coded to `1/1000`.
 * Add CNR support.
 * Finish the file-on-disk stateful-device implementation.
-* It would be interesting to port to cljc for ClojureScript compatibility, or even to babashka. Then it would not be insane to actually run this on an edge device.
 * full TR-069 spec compliance
 * TR-369 support
     * Note that the Broadband Forum has published an open-source reference implementation for TR-369 already: https://github.com/BroadbandForum/obuspa
