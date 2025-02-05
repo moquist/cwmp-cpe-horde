@@ -1,0 +1,72 @@
+#!/usr/bin/env -S bb --config nil
+
+;; WARNING:
+;;
+;; The voom-like-version scripts come from github.com/LonoCloud/voom-util.
+;; If you have changes, it's up to *you* to merge them upstream!
+;;
+;; from 20220224_233519-gddef36e
+
+(ns io.viasat.lonocloud.voom-like-version
+  (:require
+   [clojure.java.io :as io]
+   [clojure.java.shell :as shell]
+   [clojure.string :as str])
+  (:import
+   (java.time Instant
+              OffsetDateTime
+              ZoneOffset)
+   (java.time.format DateTimeFormatter)))
+
+(def usage (format "usage: %s <PATH> [PATH...] # Optionally, set REPO_ROOT_VOOM instead of supplying <PATH>."
+                   *file*))
+
+(defn apply-shell! [args]
+  (let [{:keys [exit out] :as res} (apply shell/sh args)]
+    (when-not (zero? exit)
+      (throw (ex-info "shell command failed" {:args args :res res})))
+    (str/trim out)))
+
+(def voom-formatter (DateTimeFormatter/ofPattern "yyyyMMdd_HHmmss"))
+
+(defn voom-version [paths]
+  (let [targets (map #(-> % io/file (.getCanonicalPath)) paths)
+        date-args (into ["git" "log" "-1" "--pretty=%cI" "--"] targets)
+        git-date-str (apply-shell! date-args)
+        offset-date (if (str/blank? git-date-str)
+                      (OffsetDateTime/ofInstant (Instant/now) ZoneOffset/UTC)
+                      (-> git-date-str
+                          str/trim
+                          (OffsetDateTime/parse)
+                          (.withOffsetSameInstant ZoneOffset/UTC)))
+        date-str (.format offset-date voom-formatter)
+
+        sha-args (into ["git" "log" "-1" "--pretty=%h" "--"] targets)
+        sha (apply-shell! sha-args)
+
+        status-args (into ["git" "status" "--short" "--"] targets)
+        status (apply-shell! status-args)]
+    (format "%s-g%s" date-str (str sha (when-not (str/blank? status) "_DIRTY")))))
+
+
+(defn -main [& args]
+  (let [voom-repo-root? (boolean (System/getenv "REPO_ROOT_VOOM"))
+        paths (keep #(let [s (str/trim %)]
+                       (when-not (str/blank? s)
+                         s)) args)
+        paths? (seq paths)]
+    (cond
+      (and paths? (not voom-repo-root?))
+      (println (voom-version paths))
+
+      (and voom-repo-root? (not paths?))
+      (println (voom-version []))
+
+      :else
+      (do
+        (binding [*out* *err*]
+          (println usage))
+        (System/exit 1)))))
+
+(when (= *file* (System/getProperty "babashka.file"))
+  (apply -main *command-line-args*))

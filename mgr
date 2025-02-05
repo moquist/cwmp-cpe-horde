@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z ${DEBUG+x} ]] || set -x
+
+: "${REPO_ROOT:=$(git rev-parse --show-toplevel)}"
+
+COMMAND=$1; shift || true
+
+cd "${REPO_ROOT}"
+
+function print_help() {
+    cat <<EOF
+Usage:
+
+  mgr check                       => lint, cljfmt, and run tests
+  mgr run                         => Run cwmp-client-horde. Typical example: CONFIG_FILE_PATH=config.edn ./mgr run
+  mgr help                        => Display this message
+  mgr test                        => Run all unit tests.
+  mgr lint                        => Run clj-kondo lint in all modules
+  mgr cljfmt                      => Run cljfmt on uncommitted code. Set CLJFMT_ALL=1 to run cljfmt over the entire codebase.
+EOF
+}
+
+function die() {
+    >&2 echo "$@"
+    exit 1
+}
+
+function run() {
+    clj -M -m com.viasat.git.moquist.cwmp-client.main
+}
+
+function unit-tests() {
+    "${REPO_ROOT}/bin/kaocha"
+}
+
+function lint() {
+    "${REPO_ROOT}/bin/lint"
+}
+
+function cljfmt() {
+    CLJFMT_ALL=1 "${REPO_ROOT}/bin/cljfmt.sh"
+}
+
+function do-check() {
+    lint
+    CLJFMT_ALL=1 cljfmt
+    unit-tests
+}
+
+case $COMMAND in
+    run) run "$@" ;;
+    test) unit-tests "$@" ;;
+    check) do-check ;;
+    lint) lint ;;
+    cljfmt) cljfmt ;;
+    *) print_help ;;
+esac

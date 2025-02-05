@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+: ${REPO_ROOT:=$(git rev-parse --show-toplevel)}
+
+bin_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+module_dir="$(dirname "${bin_dir}")"
+
+cd "${module_dir}"
+
+clj-kondo --lint $(clojure -Spath -M:test:dev | ${REPO_ROOT}/bin/cp-relative-paths.sh)
+

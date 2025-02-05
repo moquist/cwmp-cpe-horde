@@ -1,0 +1,5 @@
+{:logging {:level :info}
+ :stateful-device-set {:backend :in-memory
+                       :instance-count 5
+                       :acs-url "https://your-acs.here"
+                       :mac-addr-oui "FEFEFE"}}
