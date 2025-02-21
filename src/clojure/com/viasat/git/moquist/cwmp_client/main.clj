@@ -64,4 +64,15 @@
   (def sd (get (deref (:devices (:stateful-device-set @system/system)))
                "FEFEFE000004"))
   (stateful-device/get-processor-state sd)
+  (stateful-device/cnr-now? sd)
+  (-> sd :state deref :cnr-at-millis)
+
+  #_(clojure.pprint/pprint sd)
+  #_(clojure.pprint/pprint (keys  (stateful-device/get-parameter-values sd [])))
+
+  (format "%s:%s"
+          (second (first (stateful-device/get-parameter-values sd ["Device.ManagementServer.ConnectionRequestUsername"])))
+          (second (first (stateful-device/get-parameter-values sd ["Device.ManagementServer.ConnectionRequestPassword"]))))
+  ;; curl -i --digest -v -u "TAmDWH15sFSH:ZvvH7xjfmLrf" localhost:9000/cpes/FEFEFE000004
+
   (change-param-values! sd {"Device.DeviceInfo.SoftwareVersion" "monkey_1.2.7"}))
