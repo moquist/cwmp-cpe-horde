@@ -19,7 +19,20 @@
     "The cwmp-client-fn needs somewhere to keep state.
     E.g., this device is already bootstrapped, time since last boot, etc.
     Structure and format are owned by the caller, and opaque here.")
-  (-get-processor-state [this]))
+  (-get-processor-state [this])
+  (-username->password
+    [this username]
+    "Verify that the specified username and password match what the ACS sent for:
+    Device.ManagementServer.ConnectionRequestUsername
+    Device.ManagementServer.ConnectionRequestPassword")
+  (-notify-cnr!
+    [this]
+    "Notify this cwmp-client to initiate an Inform due to a Connection Request
+    according to 3.2.2 ACS Connection Initiation")
+  (-cnr-now?
+    [this]
+    "Inform now due to Connection Request")
+  (-cnr-reset! [this] "Reset CNR"))
 
 ;; XXX clean up these assertions...
 
@@ -70,3 +83,19 @@
 (defn get-processor-state [stateful-device]
   (assert (satisfies? StatefulDevice stateful-device))
   (-get-processor-state stateful-device))
+
+(defn username->password [stateful-device username]
+  (assert (satisfies? StatefulDevice stateful-device))
+  (-username->password stateful-device username))
+
+(defn notify-cnr! [stateful-device]
+  (assert (satisfies? StatefulDevice stateful-device))
+  (-notify-cnr! stateful-device))
+
+(defn cnr-now? [stateful-device]
+  (assert (satisfies? StatefulDevice stateful-device))
+  (-cnr-now? stateful-device))
+
+(defn cnr-reset! [stateful-device]
+  (assert (satisfies? StatefulDevice stateful-device))
+  (-cnr-reset! stateful-device))
