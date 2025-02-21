@@ -142,29 +142,39 @@
 (defn cnr-reset! [{:keys [state] :as _stateful-device}]
   (swap! state assoc :cnr-at-millis nil))
 
-(defrecord StatefulDeviceAtom [DeviceId acs-url state cwmp-client-fn]
+(defrecord StatefulDeviceAtom [acs-url state config]
   component/Lifecycle
   (start [component]
-    (log/trace "Starting StatefulDeviceAtom" DeviceId)
-    (if-not cwmp-client-fn
-      (do
-        (log/trace (format "StatefulDeviceAtom found no cwmp-client-fn, returning inert stateful-device"))
-        component)
-      (let [stopper (atom false)]
-        (log/trace (format "StatefulDeviceAtom found cwmp-client-fn, starting worker thread"))
-        (.start (Thread. #(while (not @stopper)
-                            (cwmp-client-fn component))))
-        (assoc component :cwmp-client-stopper stopper))))
+    (let [{:keys [DeviceId cwmp-client-fn cnr-host cnr-port]} config
+          connection-request-url {"Device.ManagementServer.ConnectionRequestURL"
+                                  ;; TODO: move /cpes/ into configs to avoid hard-coded dependency with ring-handler
+                                  (format "%s:%s/cpes/%s"
+                                          cnr-host
+                                          cnr-port
+                                          (:SerialNumber DeviceId))}]
+      (log/trace "Starting StatefulDeviceAtom" DeviceId)
+      (stateful-device/cpe-set-parameter-values! component connection-request-url)
+      (if-not cwmp-client-fn
+        (do
+          (log/trace (format "StatefulDeviceAtom found no cwmp-client-fn, returning inert stateful-device"))
+          component)
+        (let [stopper (atom false)]
+          (log/trace (format "StatefulDeviceAtom found cwmp-client-fn, starting worker thread"))
+          (.start (Thread. #(while (not @stopper)
+                              (cwmp-client-fn component))))
+          (assoc component :cwmp-client-stopper stopper)))))
   (stop [component]
-    (log/trace "Stopping StatefulDeviceAtom" DeviceId)
-    (if-not cwmp-client-fn
-      component
-      (do
-        (reset! (:cwmp-client-stopper component) true)
-        (dissoc component :cwmp-client-stopper))))
+    (let [{:keys [DeviceId cwmp-client-fn]} config]
+      (log/trace "Stopping StatefulDeviceAtom" DeviceId)
+      (if-not cwmp-client-fn
+        component
+        (do
+          (reset! (:cwmp-client-stopper component) true)
+          (dissoc component :cwmp-client-stopper)))))
 
   stateful-device/StatefulDevice
-  (-get-device-id [_] DeviceId)
+  (-get-device-id [_]
+    (get config :DeviceId))
   (-cpe-set-parameter-values! [_ kvs]
     (set-parameter-values! state :cpe kvs))
   (-acs-set-parameter-values! [_ kvs]
@@ -185,7 +195,15 @@
   (-update-processor-state! [_ f]
     (swap! state update :processor-state f))
   (-get-processor-state [_]
-    (:processor-state @state)))
+    (:processor-state @state))
+  (-username->password [this username]
+    (username->password this username))
+  (-notify-cnr! [this]
+    (notify-cnr! this))
+  (-cnr-now? [this]
+    (cnr-now? this))
+  (-cnr-reset! [this]
+    (cnr-reset! this)))
 
 (def ParameterList-base
   {:Device.DeviceInfo.Manufacturer "cwmp-test-manufacturer"
@@ -223,6 +241,7 @@
    :spvs-sources {}
    :supported-param-names (or supported-param-names #{})
    :object-instances {}
+   :cnr-at-millis nil
    :processor-state nil})
 
 (defn map->string-keys
@@ -231,21 +250,24 @@
        (map (fn [[k v]] [(name k) v]))
        (into {})))
 
-(defn stateful-device-atom [mac-address acs-url cpe-parameter-values & [{:keys [cwmp-client-fn supported-param-names]}]]
+(defn stateful-device-atom [mac-address cpe-parameter-values
+                            & [{:keys [acs-url cnr-host cnr-port cwmp-client-fn supported-param-names]}]]
   (let [{:keys [DeviceId ParameterList]} (device-cpe-spvs-init mac-address)
         cpe-parameter-values (map->string-keys (merge ParameterList cpe-parameter-values))
-        stateful-device (StatefulDeviceAtom. DeviceId
-                                             acs-url
+        stateful-device (StatefulDeviceAtom. acs-url
                                              (atom (initial-device-state supported-param-names))
-                                             cwmp-client-fn)
+                                             {:cwmp-client-fn cwmp-client-fn
+                                              :DeviceId DeviceId
+                                              :cnr-host cnr-host
+                                              :cnr-port cnr-port})
         spv-result (stateful-device/cpe-set-parameter-values! stateful-device cpe-parameter-values)]
     (if (anomaly? spv-result)
       spv-result
       stateful-device)))
 
 (comment
-  (stateful-device/get-parameter-values (stateful-device-atom "FEFEFE123456" "fake-acs-url" {}) [])
-  (def mef (stateful-device-atom "FEFEFE123456" {} {:supported-param-names #{"ab" "cd"}})))
+  (stateful-device/get-parameter-values (stateful-device-atom "FEFEFE123456" {:acs-url "fake-acs-url"}) [])
+  (def mef (stateful-device-atom "FEFEFE123456" {:acs-url "hi" :supported-param-names #{"ab" "cd"}})))
 
 (defn get-next-macr-addr [prefix counter]
   (let [basehex (-> counter
@@ -260,14 +282,16 @@
 (defrecord StatefulDeviceAtomSet [config devices]
   component/Lifecycle
   (start [component]
-    (let [{:keys [instance-count mac-addr-oui acs-url cwmp-client-fn]} config
+    (let [{:keys [instance-count mac-addr-oui acs-url cwmp-client-fn cnr-host cnr-port]} config
           devices (reduce (fn [r i]
                             (let [mac-addr (get-next-macr-addr mac-addr-oui i)]
                               (assoc r mac-addr (component/start
                                                  (stateful-device-atom mac-addr
-                                                                       acs-url
                                                                        {}
-                                                                       {:cwmp-client-fn cwmp-client-fn})))))
+                                                                       {:acs-url acs-url
+                                                                        :cwmp-client-fn cwmp-client-fn
+                                                                        :cnr-host cnr-host
+                                                                        :cnr-port cnr-port})))))
                           {}
                           (range instance-count))]
       (assoc component :devices (atom devices))))

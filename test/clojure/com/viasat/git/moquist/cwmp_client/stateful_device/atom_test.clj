@@ -119,9 +119,9 @@
       (testing description
         (let [device (stateful-device-atom/stateful-device-atom
                       "fefefe012345"
-                      "fake-acs-url"
                       (or initial-cpe-parameter-values {})
-                      {:supported-param-names supported-param-names})
+                      {:supported-param-names supported-param-names
+                       :acs-url "fake-acs-url"})
               last-step-result (last (for [{:keys [f args]} steps]
                                        (apply f device args)))]
           (when expected-match-device

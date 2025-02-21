@@ -47,7 +47,7 @@
                     :inform-body-fn informs/compose-bootstrap-boot
                     :expected-stateful-device {:messages-received [:FactoryResetReponse :BOOTSTRAP]}}]]
     (doseq [{:keys [description inform-body-fn send-request-fn expected-stateful-device]} use-cases
-            :let [device (stateful-device-atom/stateful-device-atom "fefefe012345" "fake-acs-url" {})
+            :let [device (stateful-device-atom/stateful-device-atom "fefefe012345" {} {:acs-url "fake-acs-url"})
                   acs-state (atom {})
                   send-request-fn (or send-request-fn
                                       (fn send-request-fn* [_device-id _url {:keys [body]}]
