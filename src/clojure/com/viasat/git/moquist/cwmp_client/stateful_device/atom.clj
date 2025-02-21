@@ -104,6 +104,44 @@
                                :swap-result {:instance-number current-index-max})
                   param-key-updates (merge-maps param-key-updates))))))))
 
+(defn username->password
+  "In order to authenticate Connection Requests, the :cnr-server must be able to look up the password from the given username. If the username is wrong for the given device, that's also an error and there's no reason to return the password in that case."
+  [stateful-device username]
+  (let [spvs (-> stateful-device :state deref :spvs)
+        up (get-parameter-values spvs ["Device.ManagementServer.ConnectionRequestUsername"
+                                       "Device.ManagementServer.ConnectionRequestPassword"])
+        my-username (get up "Device.ManagementServer.ConnectionRequestUsername")
+        my-password (get up "Device.ManagementServer.ConnectionRequestPassword")]
+    (if (= username my-username)
+      my-password
+      {:cognitect.anomalies/category :cognitect.anomalies/incorrect
+       :message (format "Incorrect username for device %s"
+                        (stateful-device/get-device-id stateful-device))})))
+
+(defn notify-cnr! [{:keys [state] :as _stateful-device}]
+  (swap! state assoc :cnr-at-millis (System/currentTimeMillis)))
+
+(def ^:dynamic *cnr-delay-millis*
+  "3.2.2.2 HTTP Specific Connection Request Requirements
+  The CPE’s response to a successfully authenticated Connection Request MUST use
+  either a “200 (OK)” or a “204 (No Content)” HTTP status code. The CPE MUST
+  send this response immediately upon successful authentication, prior to it initiating
+  the resulting Session.
+
+  *cnr-delay-millis* is a hackish way of allowing the cnr-server to send the HTTP response prior to the CNR inform being sent from the CPE."
+  5000)
+(defn cnr-now? [{:keys [state] :as _stateful-device}]
+  (let [cnr-at-millis (:cnr-at-millis @state)]
+    (when (integer? cnr-at-millis)
+      (Thread/sleep (max 0
+                         (- (System/currentTimeMillis)
+                            *cnr-delay-millis*
+                            cnr-at-millis)))
+      true)))
+
+(defn cnr-reset! [{:keys [state] :as _stateful-device}]
+  (swap! state assoc :cnr-at-millis nil))
+
 (defrecord StatefulDeviceAtom [DeviceId acs-url state cwmp-client-fn]
   component/Lifecycle
   (start [component]
