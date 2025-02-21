@@ -65,7 +65,7 @@
 (defn set-parameter-values! [state origin kvs]
   (:swap-result (swap! state -set-parameter-values origin kvs)))
 
-(defn get-parameter-values [wildcard-paths kvs]
+(defn get-parameter-values [kvs wildcard-paths]
   (let [available-parameter-names (keys kvs)
         matched-parameter-names (tr069-util/tr069-wildcard-path-match wildcard-paths available-parameter-names)]
     (select-keys kvs matched-parameter-names)))
@@ -133,7 +133,7 @@
     (set-parameter-values! state :acs kvs))
   (-get-parameter-values [_ names]
     ;; XXX handle anomalies
-    (get-parameter-values names (:spvs @state)))
+    (get-parameter-values (:spvs @state) names))
   (-get-parameter-names [_ param-path]
     ;; TODO: NextLevel suppport
     (get-parameter-names param-path
@@ -141,7 +141,7 @@
                          (:supported-param-names @state)))
   (-get-parameter-values-sources [_ names]
     ;; XXX handle anomalies
-    (get-parameter-values names (:spvs-sources @state)))
+    (get-parameter-values (:spvs-sources @state) names))
   (-acs-add-object! [_ object-name parameter-key]
     (add-object! state object-name parameter-key))
   (-update-processor-state! [_ f]
