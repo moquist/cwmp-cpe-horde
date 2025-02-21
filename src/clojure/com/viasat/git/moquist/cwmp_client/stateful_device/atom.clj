@@ -214,7 +214,7 @@
    :Device.DeviceInfo.ProductClass "product-class"
    :Device.DeviceInfo.ManufacturerOUI "FEFEFE"
    ;; 3.6.2 Object Instance Wildcards Requirements
-   :ManagementServer.InstanceWildcardsSupported true})
+   :Device.ManagementServer.InstanceWildcardsSupported true})
 
 (def DeviceIdStruct-base
   "DeviceId as defined in the TR-069 standard:
