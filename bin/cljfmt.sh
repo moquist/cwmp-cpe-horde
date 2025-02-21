@@ -15,6 +15,6 @@ files="$@"
 # check all modified or untracked files if no file list is provided
 all_arg=""
 [[ -z ${CLJFMT_ALL+x} ]] || all_arg="--cached"
-[[ -z "${files}" ]] && files=$(git ls-files ${all_arg} --modified --others --exclude-standard '*.clj' '*.cljc' '*.cljs' '*.edn')
+[[ -z "${files}" ]] && files=$(git ls-files ${all_arg} --modified --others --exclude-standard '*.clj' '*.cljc' '*.cljs' '*.edn' | grep -v \\.clj-kondo/)
 indents_config_file="${script_dir}/cljfmt-indents.clj"
 ${_cljfmt} fix --indents "${indents_config_file}" ${files}
