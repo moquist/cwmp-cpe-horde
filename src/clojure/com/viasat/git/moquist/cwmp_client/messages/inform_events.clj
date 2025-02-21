@@ -23,6 +23,17 @@
            :ParameterList (merge ParameterList ProvisioningCode)
            :Event Event}))))
 
+(defn compose-connection-request [stateful-device]
+  (let [{:as DeviceId :keys [SerialNumber]} (stateful-device/get-device-id stateful-device)
+        ProvisioningCode (stateful-device/get-parameter-values stateful-device ["Device.DeviceInfo.ProvisioningCode"])
+        ParameterList (stateful-device/get-parameter-values stateful-device [])
+        Event ["6 CONNECTION REQUEST"]]
+    (->> (messages/tr069-inform
+          SerialNumber
+          {:DeviceId DeviceId
+           :ParameterList (merge ParameterList ProvisioningCode)
+           :Event Event}))))
+
 (defn compose-boot [stateful-device]
   (let [{:as DeviceId :keys [SerialNumber]} (stateful-device/get-device-id stateful-device)
         ParameterList (stateful-device/get-parameter-values stateful-device [])
