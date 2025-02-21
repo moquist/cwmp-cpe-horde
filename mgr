@@ -8,6 +8,8 @@ set -euo pipefail
 
 COMMAND=$1; shift || true
 
+export CONFIG_FILE_PATH=${CONFIG_FILE_PATH:-example-config.edn}
+
 cd "${REPO_ROOT}"
 
 function print_help() {

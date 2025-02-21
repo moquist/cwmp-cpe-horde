@@ -1,4 +1,6 @@
 {:logging {:level :info}
+ :cnr-server {:host "dns-name-or-ip-address"
+              :port 9000}
  :stateful-device-set {:backend :in-memory
                        :instance-count 5
                        :acs-url "https://your-acs.here"

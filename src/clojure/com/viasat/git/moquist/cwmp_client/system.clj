@@ -4,17 +4,27 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [com.stuartsierra.component :as component]
+   [com.viasat.git.moquist.cwmp-client.http.cnr-server :as cnr-server]
    [com.viasat.git.moquist.cwmp-client.stateful-device.atom :as stateful-device-atom]
    [com.viasat.git.moquist.cwmp-client.stateful-device.fod :as stateful-device-fod]
    [taoensso.timbre :as log]))
 
 (set! *warn-on-reflection* true)
 
+(s/def :com.viasat.git.moquist.cwmp-client.system.config.cnr-server/host string?)
+(s/def :com.viasat.git.moquist.cwmp-client.system.config.cnr-server/port
+  (s/and integer?
+         #(< 0 % 65536)))
+(s/def :com.viasat.git.moquist.cwmp-client.system.config/cnr-server
+  (s/keys :req-un [:com.viasat.git.moquist.cwmp-client.system.config.cnr-server/host
+                   :com.viasat.git.moquist.cwmp-client.system.config.cnr-server/port]))
+
 (s/def :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/backend keyword?)
 (s/def :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/instance-count pos-int?)
 (s/def :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/mac-addr-oui
   (s/and string? #(re-matches #"[0-9A-F]{6}" %)))
 (s/def :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/acs-url string?)
+
 (s/def :com.viasat.git.moquist.cwmp-client.system.config/stateful-device-set
   (s/keys :req-un [:com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/backend
                    :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/instance-count
@@ -27,8 +37,12 @@
 (s/def :com.viasat.git.moquist.cwmp-client.system.config/logging
   (s/keys :req-un [:com.viasat.git.moquist.cwmp-client.system.config.logging/level]))
 
+(s/def :com.viasat.git.moquist.cwmp-client.system.config/http-api
+  (s/keys :req-un [:com.viasat.git.moquist.cwmp-client.system.config.http-api/port]))
+
 (s/def :com.viasat.git.moquist.cwmp-client.system/config
   (s/keys :req-un [:com.viasat.git.moquist.cwmp-client.system.config/logging
+                   :com.viasat.git.moquist.cwmp-client.system.config/cnr-server
                    :com.viasat.git.moquist.cwmp-client.system.config/stateful-device-set]))
 
 (defn load-config
@@ -68,16 +82,35 @@
   (throw (ex-info "Cannot construct system-map with unknown component key"
                   {:component-key component-key})))
 
-(defmethod with-component :stateful-device-set
+(defmethod with-component :cnr-server
   [system-map config component-key]
   (let [component-config (component-key config)
+        component (component/using (cnr-server/http-api component-config)
+                                   [:ring-handler])]
+    (assoc system-map component-key component)))
+
+(defmethod with-component :ring-handler
+  [system-map config component-key]
+  (let [component-config (component-key config)
+        component (component/using (cnr-server/ring-handler component-config)
+                                   [:stateful-device-set])]
+    (assoc system-map component-key component)))
+
+(defmethod with-component :stateful-device-set
+  [system-map config component-key]
+  (let [;; TODO: SMELL. How should this be done better?
+        ;; The stateful-device set needs to know the CNR host:port.
+        {cnr-host :host cnr-port :port} (:cnr-server config)
+        component-config (assoc (component-key config)
+                                :cnr-host cnr-host
+                                :cnr-port cnr-port)
         backend (:backend component-config)
         component (condp = backend
                     :in-memory
-                    (stateful-device-atom/stateful-device-atom-set (:stateful-device-set config))
+                    (stateful-device-atom/stateful-device-atom-set component-config)
 
                     :files-on-disk
-                    (stateful-device-fod/stateful-device-fod-set (:stateful-device-set config))
+                    (stateful-device-fod/stateful-device-fod-set component-config)
 
                     (let [message (format "Unexpected stateful-device-set backend: %s" backend)]
                       (throw (ex-info message
@@ -87,7 +120,9 @@
 
 (defn build-system-map [config]
   (-> {}
-      (with-component config :stateful-device-set)))
+      (with-component config :stateful-device-set)
+      (with-component config :cnr-server)
+      (with-component config :ring-handler)))
 
 (defn system-map [config]
   ;; TODO: maybe abstract system-map config here
