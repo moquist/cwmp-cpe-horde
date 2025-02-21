@@ -62,6 +62,15 @@
   (let [{:keys [events value-change-parameter-names]}
         (stateful-device/get-processor-state stateful-device)]
     (cond
+      (stateful-device/cnr-now? stateful-device)
+      (do
+        (inform-session! stateful-device acs-url (informs/compose-connection-request stateful-device))
+        (stateful-device/cnr-reset! stateful-device)
+        (stateful-device/update-processor-state! stateful-device
+                                                 #(-> %
+                                                      (update :events conj :connection-request)
+                                                      (assoc :latest-inform (time-util/now)))))
+
       (seq value-change-parameter-names)
       (do
         (inform-session! stateful-device acs-url (informs/compose-value-change stateful-device value-change-parameter-names))
