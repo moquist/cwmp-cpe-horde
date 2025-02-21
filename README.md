@@ -19,7 +19,8 @@ The purpose is, rather, to provide:
 4. AddObject support.
 5. Basic inform events: BOOTSTRAP, BOOT, PERIODIC, VALUE_CHANGE
 6. CPE-side parameters.
-7. Currently divides the `PeriodicInformInterval` by 1000 (!) to cause more frequent interaction.
+7. Connection Request support.
+8. Currently divides the `PeriodicInformInterval` by 1000 (!) to cause more frequent interaction.
 
 ## How-to
 
@@ -52,7 +53,6 @@ See the `(comment ...)` at the end of `src/clojure/com/viasat/git/moquist/cwmp_c
 ## Potential TODOs
 
 * Make the `PeriodicInformInterval` multiplier configurable instead of hard-coded to `1/1000`.
-* Add CNR support.
 * Finish the file-on-disk stateful-device implementation.
 * full TR-069 spec compliance
 * TR-369 support
