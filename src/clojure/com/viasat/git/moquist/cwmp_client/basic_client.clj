@@ -18,10 +18,10 @@
   ([^java.lang.String s ^java.lang.String encoding]
    (java.io.ByteArrayInputStream. (.getBytes s encoding))))
 
-(defn send-request [_device-id url {:as request :keys [body]}]
+(defn send-request [device-id url {:as request :keys [body]}]
   (let [request (cond-> (merge {:headers {"content-type" "application/xml"}} request)
                   (seq body) (update :body (comp xml/indent-str xml/sexp-as-element)))]
-    (log/trace {::send-request (summarize-util/summarize-tr069-message body)})
+    (log/trace device-id {::send-request (summarize-util/summarize-tr069-message body)})
     (-> (http/post url request)
         (select-keys [:status :body :cookies])
         (update :body #(when (seq %1) (c-xml/parse (str->inputstream %1)))))))
@@ -33,12 +33,18 @@
         ;; WARNING: Invalid cookie header: "Set-Cookie: AWSALB=5j+Wfo/fge7NcYW/iNC7AN5lXjPwmXzXnUigbSnLBYSwKa+JOpQ8pv2TQP/gdtdhy20XC94+0bLXWd6n23LT7xLf6eVSp9JgMgJGkyPJAToEreQ7bMoP/NW+RVig; Expires=Tue, 11 Feb 2025 21:09:30 GMT; Path=/". Invalid 'expires' attribute: Tue, 11 Feb 2025 21:09:30 GMT
         request-base {:cookie-store (clj-http.cookies/cookie-store)}
         send-request (or send-request-fn send-request)]
-    (log/debug :inform-session!-sending (summarize-util/summarize-tr069-message inform-body))
+    (log/debug :inform-session!-sending
+               (stateful-device/get-serial-number stateful-device)
+               (summarize-util/summarize-tr069-message inform-body))
     (loop [acs-message (send-request SerialNumber url (assoc request-base :body inform-body))
            session-end-pending? false]
-      (log/debug :inform-session!-received (summarize-util/summarize-tr069-message acs-message))
+      (log/debug :inform-session!-received
+                 (stateful-device/get-serial-number stateful-device)
+                 (summarize-util/summarize-tr069-message acs-message))
       (let [{:keys [message session-end-offer?]} (handlers/handle-acs-message stateful-device acs-message)]
-        (log/debug :inform-session!-next (summarize-util/summarize-tr069-message message)
+        (log/debug :inform-session!-next
+                   (stateful-device/get-serial-number stateful-device)
+                   (summarize-util/summarize-tr069-message message)
                    :session-end-offer? session-end-offer?)
         (cond
           message (recur (send-request SerialNumber url (assoc request-base :body message))

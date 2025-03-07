@@ -56,8 +56,10 @@
 (defmulti handle-acs-message
   "TR-069 ACS message handler
   See A.3, and A.3.2 in the TR-069 Amendment 6 spec for RPC methods."
-  (fn [_stateful-device {:as acs-message :keys [status]}]
-    (log/trace :handle-acs-message-dispatch acs-message)
+  (fn [stateful-device {:as acs-message :keys [status]}]
+    (log/trace :handle-acs-message-dispatch
+               (stateful-device/get-serial-number stateful-device)
+               acs-message)
     (cond
       ;; XXX handle TR-069 errors, which are HTTP 200s and in the body
       (= 200 status) (acs-message->rpc-method acs-message)
@@ -67,26 +69,32 @@
                                        :status status
                                        :acs-message acs-message})))))
 
+(defn log-handler-event [stateful-device acs-message rpc-method]
+  (log/trace :handle-acs-message
+             (stateful-device/get-serial-number stateful-device)
+             rpc-method
+             acs-message))
+
 (defmethod handle-acs-message ::session-end-offer
-  [_ acs-message]
-  (log/trace :handle-acs-message ::session-end-offer acs-message)
+  [stateful-device acs-message]
+  (log-handler-event stateful-device acs-message ::session-end-offer)
   {:session-end-offer? true})
 
 (defmethod handle-acs-message :cwmp:InformResponse
-  [_ acs-message]
-  (log/trace :handle-acs-message :cwmp:InformResponse acs-message)
+  [stateful-device acs-message]
+  (log-handler-event stateful-device acs-message :cwmp:InformResponse)
   nil)
 
 (defmethod handle-acs-message :cwmp:FactoryReset
-  [_stateful-device acs-message]
-  (log/trace :handle-acs-message :cwmp:FactoryReset acs-message)
+  [stateful-device acs-message]
+  (log-handler-event stateful-device acs-message :cwmp:FactoryReset)
   (let [msg-id (acs-message->msg-id acs-message)]
     (messages/tr069-factory-reset-response msg-id)))
 
 (defmethod handle-acs-message :cwmp:SetParameterValues
   ;; A.3.2.1 SetParameterValues
   [stateful-device acs-message]
-  (log/trace :handle-acs-message :cwmp:SetParameterValues acs-message)
+  (log-handler-event stateful-device acs-message :cwmp:SetParameterValues)
   (let [spvs (:content
               (value-finders/find-value (xml-util/xml-tag-finder-fn :ParameterList)
                                         acs-message))
@@ -103,7 +111,7 @@
 (defmethod handle-acs-message :cwmp:GetParameterValues
   ;; A.3.2.2 GetParameterValues
   [stateful-device acs-message]
-  (log/trace :handle-acs-message :cwmp:GetParameterValues acs-message)
+  (log-handler-event stateful-device acs-message :cwmp:GetParameterValues)
   (let [param-name-patterns (->> (value-finders/find-value (xml-util/xml-tag-finder-fn :ParameterNames)
                                                            acs-message)
                                  :content
@@ -116,7 +124,7 @@
 (defmethod handle-acs-message :cwmp:GetParameterNames
   ;; A.3.2.3 GetParameterNames
   [stateful-device acs-message]
-  (log/trace :handle-acs-message :cwmp:GetParameterNames acs-message)
+  (log-handler-event stateful-device acs-message :cwmp:GetParameterNames)
   (let [msg-id (acs-message->msg-id acs-message)
         param-path (xml-util/xml->tag-content acs-message :ParameterPath)
         param-names (stateful-device/get-parameter-names stateful-device param-path)]
@@ -124,8 +132,8 @@
 
 (defmethod handle-acs-message :cwmp:Download
   ;; A.3.2.8 Download
-  [_stateful-device acs-message]
-  (log/trace :handle-acs-message :cwmp:Download acs-message)
+  [stateful-device acs-message]
+  (log-handler-event stateful-device acs-message :cwmp:Download)
   (let [msg-id (acs-message->msg-id acs-message)]
     ;; intentionally a NOP; could do something here, depending what we want to test
     (messages/tr069-download-response msg-id {})))
@@ -133,7 +141,7 @@
 (defmethod handle-acs-message :cwmp:AddObject
   ;; A.3.2.6 AddObject
   [stateful-device acs-message]
-  (log/trace :handle-acs-message :cwmp:AddObject acs-message)
+  (log-handler-event stateful-device acs-message :cwmp:AddObject)
   (let [msg-id (acs-message->msg-id acs-message)
         object-name (xml-util/xml->tag-content acs-message :ObjectName)
         parameter-key (xml-util/xml->tag-content acs-message :ParameterKey)
@@ -149,6 +157,7 @@
 ; Return fault if TR-069 event is not recognized
 (defmethod handle-acs-message :default
   [stateful-device acs-message]
+  (log-handler-event stateful-device acs-message ::default)
   (throw (ex-info (format "dun blowed up trying to handle-acs-message for device %s, summary %s, acs-message: %s"
                           stateful-device (summarize-util/summarize-tr069-message acs-message) acs-message)
                   {:cause :unhandled-acs-message

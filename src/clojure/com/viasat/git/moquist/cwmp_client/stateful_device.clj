@@ -40,6 +40,10 @@
   (assert (satisfies? StatefulDevice stateful-device))
   (-get-device-id stateful-device))
 
+(defn get-serial-number [stateful-device]
+  (assert (satisfies? StatefulDevice stateful-device))
+  (:SerialNumber (get-device-id stateful-device)))
+
 (defn cpe-set-parameter-values! [stateful-device kvs]
   (assert (satisfies? StatefulDevice stateful-device))
   ;; TODO return anomalies for bad data from the ACS!
