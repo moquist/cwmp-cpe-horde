@@ -253,7 +253,9 @@
 (defn stateful-device-atom [mac-address cpe-parameter-values
                             & [{:keys [acs-url cnr-host cnr-port cwmp-client-fn supported-param-names]}]]
   (let [{:keys [DeviceId ParameterList]} (device-cpe-spvs-init mac-address)
-        cpe-parameter-values (map->string-keys (merge ParameterList cpe-parameter-values))
+        cpe-parameter-values (merge
+                              (map->string-keys ParameterList)
+                              (map->string-keys cpe-parameter-values))
         stateful-device (StatefulDeviceAtom. acs-url
                                              (atom (initial-device-state supported-param-names))
                                              {:cwmp-client-fn cwmp-client-fn
