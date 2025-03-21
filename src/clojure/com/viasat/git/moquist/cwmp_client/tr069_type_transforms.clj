@@ -1,5 +1,7 @@
 (ns com.viasat.git.moquist.cwmp-client.tr069-type-transforms
-  (:require [com.viasat.git.moquist.cwmp-client.util.time :as time-util]))
+  (:require [clojure.string :as str]
+            [com.viasat.git.moquist.cwmp-client.util.time :as time-util]
+            [taoensso.timbre :as log]))
 
 (set! *warn-on-reflection* true)
 
@@ -19,6 +21,20 @@
    :Device.DeviceInfo.SoftwareVersion "xsd:string"
    :Device.DeviceInfo.ProductClass "xsd:string"
    :Device.DeviceInfo.ManufacturerOUI "xsd:string"})
+
+(defn infer-xsi-type-from-value
+  [k v]
+  (when-let [xsd-type (cond
+                        (string? v) "xsd:string"
+                        (integer? v) "xsd:int"
+                        (boolean? v) "xsd:boolean"
+                        :else nil)]
+
+    (log/warn {:message "inferred unspecified type by value"
+               :parameter-name k
+               :parameter-value v
+               :inferred-type xsd-type})
+    xsd-type))
 
 (def xsi-transform-to {"xsd:string" str
                        "xsd:boolean" #(if % "1" "0")
