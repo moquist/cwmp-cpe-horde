@@ -37,6 +37,7 @@
 (defn -main [& _]
   (try
     (system-go (assoc-in (fetch-system-config)
+                         ;; XXX This is mildly gross, and non-extensible. Consider better options.
                          [:stateful-device-set :cwmp-client-fn] basic-client/cwmp-client-fn))
     (catch Throwable t
       (log/fatal "Caught error starting system, throwing exception without components")
