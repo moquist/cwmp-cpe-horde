@@ -24,12 +24,15 @@
 (s/def :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/mac-addr-oui
   (s/and string? #(re-matches #"[0-9A-F]{6}" %)))
 (s/def :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/acs-url string?)
+(s/def :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/cpe-parameter-values
+  (s/map-of string? any?))
 
 (s/def :com.viasat.git.moquist.cwmp-client.system.config/stateful-device-set
   (s/keys :req-un [:com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/backend
                    :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/instance-count
                    :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/mac-addr-oui
-                   :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/acs-url]))
+                   :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/acs-url
+                   :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/cpe-parameter-values]))
 
 (s/def :com.viasat.git.moquist.cwmp-client.system.config.logging/level
   ;; specific to https://github.com/taoensso/timbre/blob/master/wiki/1-Getting-started.md#minimum--level

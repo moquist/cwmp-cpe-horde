@@ -284,12 +284,12 @@
 (defrecord StatefulDeviceAtomSet [config devices]
   component/Lifecycle
   (start [component]
-    (let [{:keys [instance-count mac-addr-oui acs-url cwmp-client-fn cnr-host cnr-port]} config
+    (let [{:keys [instance-count mac-addr-oui acs-url cwmp-client-fn cnr-host cnr-port cpe-parameter-values]} config
           devices (reduce (fn [r i]
                             (let [mac-addr (get-next-macr-addr mac-addr-oui i)]
                               (assoc r mac-addr (component/start
                                                  (stateful-device-atom mac-addr
-                                                                       {}
+                                                                       cpe-parameter-values
                                                                        {:acs-url acs-url
                                                                         :cwmp-client-fn cwmp-client-fn
                                                                         :cnr-host cnr-host
