@@ -36,6 +36,18 @@
                :inferred-type xsd-type})
     xsd-type))
 
+(defn indexify-tr181-name
+  "TR181 names may be indexed, like: :abc.1.def.7.efg
+  Transform each .[0-9]+. sequence into .{i}."
+  [nom]
+  (str/replace nom #"\.[0-9]+\." ".{i}."))
+
+(defn get-xsi-type [k v]
+  (or (get xsi-types (indexify-tr181-name (name k)))
+      (infer-xsi-type-from-value k v)
+      ;; XXX Ewww. This is a testing tool. Best to fail loudly until we know more about the behavior we want.
+      (throw (Exception. (format "Don't know type for k %s and v %s" k v)))))
+
 (def xsi-transform-to {"xsd:string" str
                        "xsd:boolean" #(if % "1" "0")
                        "xsd:dateTime" #(time-util/format-datetime (time-util/seconds->datetime %))})
@@ -50,8 +62,8 @@
   "Given a kv, return a map containing the k, a transformed value, and the xsi data type of v.
    Data type defaults to string if type does not have a specific transformer fn"
   [[k v]]
-  (let [xsi-type (get xsi-types k "xsd:string")
-        transform-f (get xsi-transform-to xsi-type str)]
+  (let [xsi-type (get-xsi-type k v)
+        transform-f (get xsi-transform-to xsi-type identity)]
     {:cwmp-name k
      :value (transform-f v)
      :xsi-type xsi-type}))
