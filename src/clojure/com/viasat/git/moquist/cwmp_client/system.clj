@@ -27,6 +27,12 @@
 (s/def :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/cpe-parameter-values
   (s/map-of string? any?))
 
+(s/def :com.viasat.git.moquist.cwmp-client.system.config.tr069/additional-tr181-name->xsd-type
+  (s/map-of string? string?))
+
+(s/def :com.viasat.git.moquist.cwmp-client.system.config/tr069
+  (s/keys :opt-un [:com.viasat.git.moquist.cwmp-client.system.config.tr069/additional-tr181-name->xsd-type]))
+
 (s/def :com.viasat.git.moquist.cwmp-client.system.config/stateful-device-set
   (s/keys :req-un [:com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/backend
                    :com.viasat.git.moquist.cwmp-client.system.config.stateful-device-set/instance-count

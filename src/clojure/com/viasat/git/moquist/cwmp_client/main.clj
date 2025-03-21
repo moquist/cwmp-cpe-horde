@@ -4,6 +4,7 @@
    [com.viasat.git.moquist.cwmp-client.basic-client :as basic-client]
    [com.viasat.git.moquist.cwmp-client.stateful-device :as stateful-device]
    [com.viasat.git.moquist.cwmp-client.system :as system]
+   [com.viasat.git.moquist.cwmp-client.tr069-type-transforms :as tr069-type-transforms]
    [taoensso.timbre :as log]
    [timbre-json-appender.core :as tja]))
 
@@ -24,9 +25,16 @@
     (tja/install))
   (log/set-min-level! level))
 
+(defn configure-tr069!
+  ;; XXX Does this really belong here? Where would be better?
+  "Provide for custom extension of the TR181 data model with xsd type specs."
+  [{:keys [additional-tr181-name->xsd-type]}]
+  (swap! tr069-type-transforms/xsi-types merge additional-tr181-name->xsd-type))
+
 (defn system-go [config]
   (try
     (configure-logging! (:logging config))
+    (configure-tr069! (:tr069 config))
     (log/debug {:active-config config})
     (-> (system/system-map config)
         (system/start-system))
