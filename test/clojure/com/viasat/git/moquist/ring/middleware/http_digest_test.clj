@@ -25,7 +25,7 @@
        {:request-method :get
         :uri "/cpes/FEFEFE000004"
         :headers {"authorization"
-                  "Digest username=\"xLbddQogrHRi\", realm=\"TR-069 Connection Request (cwmp-client-horde)\", nonce=\"d096c24bfa0710f763733a816e150fc3\", uri=\"/cpes/FEFEFE000004\", cnonce=\"MTk4ZTljNjRhNDg2NTcxZDgxNmIzMTQ1ZDBhODkyMGU=\", nc=00000001, qop=auth, response=\"35890f84f0fb3154dad8b25005cc4a54\", opaque=\"\""}})))
+                  "Digest username=\"xLbddQogrHRi\", realm=\"TR-069 Connection Request (cwmp-cpe-horde)\", nonce=\"d096c24bfa0710f763733a816e150fc3\", uri=\"/cpes/FEFEFE000004\", cnonce=\"MTk4ZTljNjRhNDg2NTcxZDgxNmIzMTQ1ZDBhODkyMGU=\", nc=00000001, qop=auth, response=\"1291e986e51108168280c0f8d8ccd778\", opaque=\"\""}})))
 
 (defn- parse-www-authenticate-header [header]
   (let [quoted (->> (re-seq #"([a-z]+)=\"([^\"]+)\"" header)
