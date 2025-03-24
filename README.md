@@ -52,6 +52,20 @@ See the `(comment ...)` at the end of `src/clojure/com/viasat/git/moquist/cwmp_c
 
 ## Potential TODOs
 
+* This tool is more like a framework, than a library. This seems OK, and
+  perhaps inevitable, in order to have anything that works "OOTB". Also, this is
+  in keeping with the pattern of how such things are often delivered: as working
+  frameworks into which vendors are expected to insert their own custom
+  functionality. HOWEVER, it would be good to have a clean, well-documented
+  approach to proprietary extension, as will be required by almost any
+  interesting test scenarios.
+    * Would it be good to have well-documented hooks with some kind of
+      middleware pattern? E.g., `before-set-parameter-values`,
+      `after-set-parameter-values`, etc.?
+    * Would it be better to refactor away from the "framework" approach, and
+      provide an example composition that works OOTB, but with a documented use
+      pattern to compose your own somewhere else, and just use this repo as a set
+      of libraries?
 * Make the `PeriodicInformInterval` multiplier configurable instead of hard-coded to `1/1000`.
 * Finish the file-on-disk stateful-device implementation.
 * full TR-069 spec compliance
