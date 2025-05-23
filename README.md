@@ -1,5 +1,7 @@
 # CWMP CPE Horde
 
+[![Tests](https://github.com/Viasat/cwmp-cpe-horde/actions/workflows/test.yaml/badge.svg)](https://github.com/Viasat/cwmp-cpe-horde/actions/workflows/test.yaml)
+
 TR-069 (AKA "CPE WAN Management Protocol", or CWMP) is a standardized protocol for managing edge devices over a WAN. See https://www.broadband-forum.org/pdfs/tr-069-1-6-1.pdf for the latest (_caveat lector_) specification document.
 
 This CWMP Customer Premises Equipment (CPE) implementation is not tested to be _fully compliant_ with the TR-069 specification.
