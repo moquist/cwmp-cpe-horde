@@ -1,5 +1,6 @@
-{:logging {:level :info}
- :cnr-server {:host "dns-name-or-ip-address"
+{;; see https://taoensso.github.io/timbre/taoensso.timbre.html#var-*config* for logging levels, e.g., :trace, :debug, :info, :warn, :error, :fatal, :report
+ :logging {:level :trace}
+ :cnr-server {:host "dns-name-or-ip-address-where-this-cpe-horde-is-running"
               :port 9000}
  :stateful-device-set {:backend :in-memory
                        :cpe-parameter-values {}
