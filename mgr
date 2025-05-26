@@ -31,7 +31,7 @@ function die() {
 }
 
 function run() {
-    clj -M -m com.viasat.git.moquist.cwmp-client.main
+    clj -M -m viasat.cwmp-cpe.main
 }
 
 function unit-tests() {
