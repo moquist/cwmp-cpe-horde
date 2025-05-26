@@ -12,6 +12,8 @@
 
 (set! *warn-on-reflection* true)
 
+(def ^:dynamic *default-periodic-inform-interval-seconds* 600)
+
 (defn str->inputstream
   "https://stackoverflow.com/a/38284236"
   ([^java.lang.String s] (str->inputstream s "UTF-8"))
@@ -54,10 +56,11 @@
 
 (defn periodic-inform-now? [stateful-device]
   (let [{:keys [latest-inform]} (stateful-device/get-processor-state stateful-device)
-        interval-seconds (-> stateful-device
-                             (stateful-device/get-parameter-values ["Device.ManagementServer.PeriodicInformInterval"])
-                             vals
-                             first)
+        interval-seconds (or (-> stateful-device
+                                 (stateful-device/get-parameter-values ["Device.ManagementServer.PeriodicInformInterval"])
+                                 vals
+                                 first)
+                             *default-periodic-inform-interval-seconds*)
         millis-since-latest-inform (when latest-inform
                                      (- (time-util/datetime->millis (time-util/now))
                                         (time-util/datetime->millis latest-inform)))]
