@@ -65,7 +65,8 @@
 (defn get-parameter-names [stateful-device param-path]
   (assert (satisfies? StatefulDevice stateful-device))
   ;; TODO return anomalies for bad data from the ACS!
-  (assert (string? param-path))
+  (assert (string? param-path)
+          (format "The specified param-path is not a string: %s" param-path))
   (-get-parameter-names stateful-device param-path))
 
 (defn get-parameter-values-sources [stateful-device names]
