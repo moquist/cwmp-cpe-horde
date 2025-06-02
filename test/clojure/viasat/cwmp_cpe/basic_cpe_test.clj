@@ -4,6 +4,7 @@
             [viasat.cwmp-cpe.basic-cpe :as basic-cpe]
             [viasat.cwmp-cpe.messages :as messages]
             [viasat.cwmp-cpe.messages.inform-events :as informs]
+            [viasat.cwmp-cpe.stateful-device :as stateful-device]
             [viasat.cwmp-cpe.stateful-device.atom :as stateful-device-atom]
             [viasat.cwmp-cpe.util.tr069 :as tr069-util]
             [viasat.cwmp-cpe.util.value-finders :as value-finders]
@@ -60,3 +61,26 @@
                                           {:send-request-fn send-request-fn})))
         (is (match? expected-stateful-device @acs-state))))))
 
+(deftest periodic-inform-now?-test
+  (let [use-cases [{:description "device without a PeriodicInformInterval"
+                    :expected? not}
+                   {:description "device with a PeriodicInformInterval of 0, not yet informed"
+                    :periodic-inform-interval-seconds 0
+                    :expected? identity}
+                   {:description "device with a PeriodicInformInterval of 0, but has already informed in the fuuuuuture"
+                    :periodic-inform-interval-seconds 0
+                    :latest-inform-datetime (java.util.Date. (* 2 (System/currentTimeMillis)))
+                    :expected? not}]]
+    (doseq [{:keys [description expected? periodic-inform-interval-seconds latest-inform-datetime]} use-cases
+            :let [device-params (cond-> {}
+                                  periodic-inform-interval-seconds (assoc "Device.ManagementServer.PeriodicInformInterval" periodic-inform-interval-seconds))
+                  stateful-device (stateful-device-atom/stateful-device-atom "fefefe012345"
+                                                                             device-params
+                                                                             {:acs-url "fake-acs-url"})]]
+      (when latest-inform-datetime
+        (stateful-device/update-processor-state! stateful-device
+                                                 #(-> %
+                                                      (assoc :events [::periodic-inform-now?-test])
+                                                      (assoc :latest-inform latest-inform-datetime))))
+      (testing description
+        (is (expected? (basic-cpe/periodic-inform-now? stateful-device)))))))

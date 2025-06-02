@@ -12,8 +12,6 @@
 
 (set! *warn-on-reflection* true)
 
-(def ^:dynamic *default-periodic-inform-interval-seconds* 600)
-
 (defn str->inputstream
   "https://stackoverflow.com/a/38284236"
   ([^java.lang.String s] (str->inputstream s "UTF-8"))
@@ -56,16 +54,19 @@
 
 (defn periodic-inform-now? [stateful-device]
   (let [{:keys [latest-inform]} (stateful-device/get-processor-state stateful-device)
-        interval-seconds (or (-> stateful-device
-                                 (stateful-device/get-parameter-values ["Device.ManagementServer.PeriodicInformInterval"])
-                                 vals
-                                 first)
-                             *default-periodic-inform-interval-seconds*)
-        millis-since-latest-inform (when latest-inform
+        device-id (:SerialNumber (stateful-device/get-device-id stateful-device))
+        interval-seconds (-> stateful-device
+                             (stateful-device/get-parameter-values ["Device.ManagementServer.PeriodicInformInterval"])
+                             vals
+                             first)
+        millis-since-latest-inform (when (instance? java.util.Date latest-inform)
                                      (- (time-util/datetime->millis (time-util/now))
                                         (time-util/datetime->millis latest-inform)))]
-    ;; DO NOT multiply interval-seconds by 1000, in order to inform 1000 times as often. :D
-    (< interval-seconds millis-since-latest-inform)))
+    (if-not (number? interval-seconds)
+      (log/trace device-id {::periodic-inform-now? "periodic inform disabled because Device.ManagementServer.PeriodicInformInterval is not a number"})
+      ;; DO NOT multiply interval-seconds by 1000, in order to inform 1000 times as often. :D
+      (or (not millis-since-latest-inform)
+          (< interval-seconds millis-since-latest-inform)))))
 
 (defn cwmp-cpe-fn [{:as stateful-device :keys [acs-url]}]
   (let [{:keys [events value-change-parameter-names]}
