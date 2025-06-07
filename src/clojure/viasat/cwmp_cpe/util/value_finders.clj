@@ -4,7 +4,7 @@
 
 ;; XXX refactor to take multiple preds for structure-based fuzzy drill-down?
 (defn find-value
-  "Thx, glean"
+  "Recurse through data and return the first value for which pred matches."
   [pred data]
   (cond
     (pred data) data
