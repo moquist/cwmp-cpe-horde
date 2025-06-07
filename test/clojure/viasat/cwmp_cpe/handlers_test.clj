@@ -21,7 +21,21 @@
                        {:tag :SOAP-ENV:Body,
                         :attrs nil,
                         :content [{:tag :cwmp:FactoryReset, :attrs nil, :content nil}]}]}
-                     :expected :cwmp:FactoryReset}]]
+                     :expected :cwmp:FactoryReset}
+                    {:description "Unknown RPC method"
+                     :acs-message
+                     {:tag :SOAP-ENV:Envelope,
+                      :content
+                      [{:tag :SOAP-ENV:Header,
+                        :attrs nil,
+                        :content
+                        [{:tag :cwmp:ID,
+                          :attrs {:SOAP-ENV:mustUnderstand "1"},
+                          :content ["UNKNOWN-1-1234567890.123456"]}]}
+                       {:tag :SOAP-ENV:Body,
+                        :attrs nil,
+                        :content [{:tag :cwmp:UnknownMethod, :attrs nil, :content nil}]}]}
+                     :expected :cwmp:UnknownMethod}]]
     (doseq [{:keys [description acs-message expected]} test-cases]
       (testing description
         (is (= expected
