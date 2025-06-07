@@ -10,6 +10,8 @@
             [viasat.cwmp-cpe.util.value-finders :as value-finders]
             [viasat.cwmp-cpe.util.xml :as xml-util]))
 
+(set! *warn-on-reflection* true)
+
 (defn handle-fake-acs [stateful-device cpe-message]
   (let [device-id (:device-id @stateful-device)
         ;; XXX add more event flows
