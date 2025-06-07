@@ -126,7 +126,9 @@
   [stateful-device acs-message]
   (log-handler-event stateful-device acs-message :cwmp:GetParameterNames)
   (let [msg-id (acs-message->msg-id acs-message)
-        param-path (xml-util/xml->tag-content acs-message :ParameterPath)
+        param-path (or (xml-util/xml->tag-content acs-message :ParameterPath)
+                       ;; treat falsy param-path as empty string
+                       "")
         param-names (stateful-device/get-parameter-names stateful-device param-path)]
     (messages/tr069-get-parameter-names-response msg-id {:ParameterList param-names})))
 
