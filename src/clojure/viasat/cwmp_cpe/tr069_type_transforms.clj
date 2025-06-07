@@ -53,7 +53,7 @@
   (str/replace nom #"\.[0-9]+\." ".{i}."))
 
 (defn get-xsi-type [k v]
-  (or (get @xsi-types (indexify-tr181-name (name k)))
+  (or (and k (get @xsi-types (indexify-tr181-name (name k))))
       (infer-xsi-type-from-value k v)
       ;; XXX Ewww. This is a testing tool. Best to fail loudly until we know more about the behavior we want.
       (throw (Exception. (format "Don't know type for k %s and v %s" k v)))))
