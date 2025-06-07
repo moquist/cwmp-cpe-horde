@@ -22,11 +22,11 @@
 
 (defn parameter-info-structs
   [params]
-  (mapv #(let [{:keys [cwmp-name]} (tr069-type-transforms/to-xsi %)]
-           [:ParameterInfoStruct nil
-            [:Name nil (keyword->str cwmp-name)]
+  (mapv (fn [cwmp-name]
+          [:ParameterInfoStruct nil
+           [:Name nil (keyword->str cwmp-name)]
             ;; TODO: support some non-writable params; useful to test
-            [:Writable nil true]])
+           [:Writable nil true]])
         params))
 
 ;; XXX allow keywords for keys? vals? neither?
