@@ -37,7 +37,7 @@ Get usage:
 However you run this code, your horde of CWMP CPE instances will show up in the
 ACS as devices with MAC addresses numbered counting up from the OUI in your
 config file. For example, if your OUI is `FEFEFE` (a [locally-administered
-address](https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local_(U/L_bit)),
+address](https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local_(U/L_bit))),
 and you specify `:instance-count 3`, then the following devices will be
 registered with your ACS:
 
