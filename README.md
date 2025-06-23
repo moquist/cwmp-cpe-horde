@@ -32,22 +32,63 @@ Get usage:
 ./mgr help
 ```
 
-Run a horde of CWMP CPE instances:
+## Run a horde of CWMP CPE instances
 
-```
-# first, copy example-config.edn and add your ACS URL and customize as you like
-CONFIG_FILE_PATH=config.edn ./mgr run
-```
-
-Your horde of CWMP CPE instances will show up in the ACS as devices with MAC
-addresses numbered counting up from the OUI in your config file. For example,
-if your OUI is `FEFEFE` and you specify `:instance-count 3`, then the following
-devices will be registered with your ACS:
+However you run this code, your horde of CWMP CPE instances will show up in the
+ACS as devices with MAC addresses numbered counting up from the OUI in your
+config file. For example, if your OUI is `FEFEFE` (a [locally-administered
+address](https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local_(U/L_bit)),
+and you specify `:instance-count 3`, then the following devices will be
+registered with your ACS:
 
 ```
 FEFEFE000000
 FEFEFE000001
 FEFEFE000002
+```
+
+### Run from Docker
+
+You might like to have a docker image of the horde, for testing in a
+docker-compose setup or deploying to Kubernetes to have a whole "lab" of CPEs
+pointed at an ACS.
+
+First, you probably want to copy example-config.edn and add your ACS URL and
+customize as you like.
+
+```
+cp -i example-config.edn config.edn # then edit it to add your ACS URL and customize
+./mgr build
+CONFIG_FILE_PATH=config.edn IMAGE_NAME=cwmp-cpe-horde:20250623_204156-gaadc89d ./mgr up
+```
+
+#### Image Tags
+
+The build encoded by `mgr` tags images, by default, with a version that is
+understandable by humans, sorts chronologically, and maps directly back to a
+git SHA.
+
+For example:
+```
+20250623_204156-gaadc89d_DIRTY
+^------+------^ ^^--+--^-^-+-^
+       |        |   |      \ ---- (optional) repo has uncommitted changes
+       |        |   \------------ git sha
+       |        \ --------------- the letter "g", which stands for "git"[1]
+       \------------------------- year/month/day/hour/minute/second of commit
+```
+
+See https://github.com/Viasat/lein-voom?tab=readme-ov-file#voom-modifier for prior art.
+
+### Run from Source
+
+Don't forget to copy example-config.edn and add your ACS URL and customize it to your needs!
+
+If you want to run directly from source, on the command line, `./mgr run` is your friend:
+
+```
+cp -i example-config.edn config.edn # then edit it to add your ACS URL and customize
+CONFIG_FILE_PATH=config.edn ./mgr run
 ```
 
 ## REPL
