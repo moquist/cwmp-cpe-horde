@@ -25,6 +25,7 @@ Usage:
   mgr cljfmt                      => Run cljfmt on uncommitted code. Set CLJFMT_ALL=1 to run cljfmt over the entire codebase.
   mgr help                        => Display this message
   mgr lint                        => Run clj-kondo lint in all modules
+  mgr req                         => Check system requirements and print warnings.
   mgr run                         => Run cwmp-client-horde from source. Typical example: CONFIG_FILE_PATH=config.edn ./mgr run
   mgr test                        => Run all unit tests.
   mgr up                          => Run cwmp-client-horde docker image. Typical example: IMAGE_NAME=cwmp-cpe-horde:20250607_195436-gfbcf556 CONFIG_FILE_PATH=config.edn ./mgr up
@@ -34,6 +35,10 @@ EOF
 function die() {
     >&2 echo "$@"
     exit 1
+}
+
+function warn() {
+    >&2 echo "$@"
 }
 
 function build() {
@@ -64,6 +69,13 @@ function lint() {
     "${REPO_ROOT}/bin/lint"
 }
 
+function req() {
+    type -P bb &> /dev/null || warn "WARNING: bb (babashka) not found"
+    type -P clj &> /dev/null || warn "WARNING: clj (Clojure runner) not found"
+    type -P clj-kondo &> /dev/null || warn "WARNING: clj-kondo not found"
+    type -P docker &> /dev/null || warn "WARNING: docker not found"
+}
+
 function run() {
     clj -M -m viasat.cwmp-cpe.main
 }
@@ -85,12 +97,14 @@ function up() {
         $IMAGE_NAME
 }
 
+req
 case $COMMAND in
     build) build "$@" ;;
     check) do-check ;;
     cljfmt) cljfmt ;;
     down) down ;;
     lint) lint ;;
+    req) req ;;
     run) run "$@" ;;
     test) unit-tests "$@" ;;
     up) up "$@" ;;
