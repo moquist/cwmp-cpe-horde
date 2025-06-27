@@ -128,6 +128,6 @@
             (is (match? expected-match-device device)))
           (when expected-match-state
             (is (match? expected-match-state
-                        @(:state device))))
+                        (stateful-device/dump device))))
           (when expected-match-last-step
             (is (match? expected-match-last-step last-step-result))))))))

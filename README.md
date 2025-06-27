@@ -91,9 +91,198 @@ cp -i example-config.edn config.edn # then edit it to add your ACS URL and custo
 CONFIG_FILE_PATH=config.edn ./mgr run
 ```
 
-## REPL
+## Run in REPL
 
 See the `(comment ...)` at the end of `src/clojure/viasat/cwmp_cpe/main.clj` for some ready-to-go, basic REPL interaction.
+
+## CPE State
+
+### Dump
+
+CPE state can be dumped by using the HTTP API of the horde. For example:
+
+```
+$ curl -s localhost:9000/stateful-devices/FEFEFE000000 | jq .
+{
+  "swap-result": null,
+  "spvs": {
+    "Device.DeviceInfo.ManufacturerOUI": "FEFEFE",
+    "Device.DeviceInfo.HardwareVersion": "cwmp-test-hardware-version",
+    "Device.ManagementServer.PeriodicInformInterval": 60,
+    "Device.ManagementServer.ConnectionRequestPassword": "pavHnhAlzmE4",
+    "Device.DeviceInfo.Manufacturer": "cwmp-test-manufacturer",
+    "Device.DeviceInfo.ProvisioningCode": "Default",
+    "Device.ManagementServer.ConnectionRequestUsername": "8EMzuErdENsU",
+    "Device.ManagementServer.PeriodicInformEnable": true,
+    "Device.DeviceInfo.SerialNumber": "FEFEFE000000",
+    "Device.DeviceInfo.SoftwareVersion": "software_version",
+    "Device.ManagementServer.ConnectionRequestURL": "localhost:9000/cpes/FEFEFE000000",
+    "Device.ManagementServer.InstanceWildcardsSupported": true,
+    "Device.DeviceInfo.ProductClass": "product-class",
+    "Device.ManagementServer.PeriodicInformTime": "1970-01-01T03:52:26Z"
+  },
+  "spvs-sources": {
+    "Device.DeviceInfo.ManufacturerOUI": "cpe",
+    "Device.DeviceInfo.HardwareVersion": "cpe",
+    "Device.ManagementServer.PeriodicInformInterval": "acs",
+    "Device.ManagementServer.ConnectionRequestPassword": "acs",
+    "Device.DeviceInfo.Manufacturer": "cpe",
+    "Device.DeviceInfo.ProvisioningCode": "acs",
+    "Device.ManagementServer.ConnectionRequestUsername": "acs",
+    "Device.ManagementServer.PeriodicInformEnable": "acs",
+    "Device.DeviceInfo.SerialNumber": "cpe",
+    "Device.DeviceInfo.SoftwareVersion": "cpe",
+    "Device.ManagementServer.ConnectionRequestURL": "cpe",
+    "Device.ManagementServer.InstanceWildcardsSupported": "cpe",
+    "Device.DeviceInfo.ProductClass": "cpe",
+    "Device.ManagementServer.PeriodicInformTime": "acs"
+  },
+  "supported-param-names": [
+    "Device.Services.X_YZ-COM_Shindig."
+  ],
+  "object-instances": {
+    "Device.Services.X_YZ-COM_Shindig.": {
+      "source": "acs",
+      "current-index-max": 0
+    }
+  },
+  "cnr-at-millis": null,
+  "processor-state": {
+    "events": [
+      "bootstrap",
+      "boot",
+      "periodic-inform",
+      "periodic-inform",
+      "periodic-inform",
+      "periodic-inform",
+      "periodic-inform",
+      "periodic-inform",
+      "periodic-inform",
+      "periodic-inform"
+    ],
+    "latest-inform": "2025-06-27T18:54:54Z"
+  }
+}
+```
+
+### Connection Request (CNR)
+
+Using the dump feature, the ConnectionRequestUsername and ConnectionRequestPassword can be obtained:
+
+```
+$ DEVICE_ID=FEFEFE000000
+curl -s localhost:9000/stateful-devices/$DEVICE_ID | jq '.spvs | {"username": ."Device.ManagementServer.ConnectionRequestUsername", "password": ."Device.ManagementServer.ConnectionRequestPassword"}'
+{
+  "username": "8EMzuErdENsU",
+  "password": "pavHnhAlzmE4"
+}
+```
+
+You can copy 'n paste that together to issue a Connection Request:
+
+```
+$ curl -i --digest -v -u "8EMzuErdENsU:pavHnhAlzmE4" localhost:9000/cpes/$DEVICE_ID
+* Host localhost:9000 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:9000...
+* Connected to localhost (::1) port 9000
+* Server auth using Digest with user '8EMzuErdENsU'
+> GET /cpes/FEFEFE000000 HTTP/1.1
+> Host: localhost:9000
+> User-Agent: curl/8.5.0
+> Accept: */*
+>
+< HTTP/1.1 401 Unauthorized
+HTTP/1.1 401 Unauthorized
+< Date: Fri, 27 Jun 2025 21:33:24 GMT
+Date: Fri, 27 Jun 2025 21:33:24 GMT
+< WWW-Authenticate: Digest realm="TR-069 Connection Request (cwmp-cpe-horde)", qop="auth", nonce="2103accf0285fdf0cc76584744c59c18", opaque=""
+WWW-Authenticate: Digest realm="TR-069 Connection Request (cwmp-cpe-horde)", qop="auth", nonce="2103accf0285fdf0cc76584744c59c18", opaque=""
+< Content-Length: 12
+Content-Length: 12
+< Server: Jetty(11.0.24)
+Server: Jetty(11.0.24)
+
+<
+* Ignoring the response-body
+* Connection #0 to host localhost left intact
+* Issue another request to this URL: 'http://localhost:9000/cpes/FEFEFE000000'
+* Found bundle for host: 0x62f89a67ed40 [serially]
+* Can not multiplex, even if we wanted to
+* Re-using existing connection with host localhost
+* Server auth using Digest with user '8EMzuErdENsU'
+> GET /cpes/FEFEFE000000 HTTP/1.1
+> Host: localhost:9000
+> Authorization: Digest username="8EMzuErdENsU", realm="TR-069 Connection Request (cwmp-cpe-horde)", nonce="2103accf0285fdf0cc76584744c59c18", uri="/cpes/FEFEFE000000", cnonce="ZWU3NjU0YzlkNGU5MWM2YjMxYWE4MmE5MmMyNWY2YjQ=", nc=00000001, qop=auth, response="09dbdc6b4365f64a09f9db45ff143afa", opaque=""
+> User-Agent: curl/8.5.0
+> Accept: */*
+>
+< HTTP/1.1 204 No Content
+HTTP/1.1 204 No Content
+< Date: Fri, 27 Jun 2025 21:33:24 GMT
+Date: Fri, 27 Jun 2025 21:33:24 GMT
+< Server: Jetty(11.0.24)
+Server: Jetty(11.0.24)
+
+<
+* Connection #0 to host localhost left intact
+```
+
+Or you can put the whole CNR together on the command line as one command:
+
+```
+$ DEVICE_ID=FEFEFE000000
+$ curl -i --digest -v \
+    -u $(curl -s localhost:9000/stateful-devices/$DEVICE_ID \
+            | jq -r '.spvs | (."Device.ManagementServer.ConnectionRequestUsername" + ":" + ."Device.ManagementServer.ConnectionRequestPassword")') \
+    localhost:9000/cpes/$DEVICE_ID
+* Host localhost:9000 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:9000...
+* Connected to localhost (::1) port 9000
+* Server auth using Digest with user '8EMzuErdENsU'
+> GET /cpes/FEFEFE000000 HTTP/1.1
+> Host: localhost:9000
+> User-Agent: curl/8.5.0
+> Accept: */*
+>
+< HTTP/1.1 401 Unauthorized
+HTTP/1.1 401 Unauthorized
+< Date: Fri, 27 Jun 2025 21:21:03 GMT
+Date: Fri, 27 Jun 2025 21:21:03 GMT
+< WWW-Authenticate: Digest realm="TR-069 Connection Request (cwmp-cpe-horde)", qop="auth", nonce="ea49260d870a2ac67824afca1612fda8", opaque=""
+WWW-Authenticate: Digest realm="TR-069 Connection Request (cwmp-cpe-horde)", qop="auth", nonce="ea49260d870a2ac67824afca1612fda8", opaque=""
+< Content-Length: 12
+Content-Length: 12
+< Server: Jetty(11.0.24)
+Server: Jetty(11.0.24)
+
+<
+* Ignoring the response-body
+* Connection #0 to host localhost left intact
+* Issue another request to this URL: 'http://localhost:9000/cpes/FEFEFE000000'
+* Found bundle for host: 0x623348c34d40 [serially]
+* Can not multiplex, even if we wanted to
+* Re-using existing connection with host localhost
+* Server auth using Digest with user '8EMzuErdENsU'
+> GET /cpes/FEFEFE000000 HTTP/1.1
+> Host: localhost:9000
+> Authorization: Digest username="8EMzuErdENsU", realm="TR-069 Connection Request (cwmp-cpe-horde)", nonce="ea49260d870a2ac67824afca1612fda8", uri="/cpes/FEFEFE000000", cnonce="N2M1ZDRmZWU5OGYyY2JiYTg3ZmZjNzU0NmE0YWFlNDg=", nc=00000001, qop=auth, response="0b156d0228ec198693d4c4542e167d75", opaque=""
+> User-Agent: curl/8.5.0
+> Accept: */*
+>
+< HTTP/1.1 204 No Content
+HTTP/1.1 204 No Content
+< Date: Fri, 27 Jun 2025 21:21:03 GMT
+Date: Fri, 27 Jun 2025 21:21:03 GMT
+< Server: Jetty(11.0.24)
+Server: Jetty(11.0.24)
+
+<
+* Connection #0 to host localhost left intact
+```
 
 ## Potential TODOs
 

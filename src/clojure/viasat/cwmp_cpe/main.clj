@@ -74,6 +74,7 @@
                "FEFEFE000004"))
   (stateful-device/get-processor-state sd)
   (stateful-device/cnr-now? sd)
+  (stateful-device/dump sd)
   (-> sd :state deref :cnr-at-millis)
 
   #_(clojure.pprint/pprint sd)

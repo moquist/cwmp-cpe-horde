@@ -32,7 +32,8 @@
   (-cnr-now?
     [this]
     "Inform now due to Connection Request")
-  (-cnr-reset! [this] "Reset CNR"))
+  (-cnr-reset! [this] "Reset CNR")
+  (-dump [this] "Return the state of the stateful device"))
 
 ;; XXX clean up these assertions...
 
@@ -104,3 +105,7 @@
 (defn cnr-reset! [stateful-device]
   (assert (satisfies? StatefulDevice stateful-device))
   (-cnr-reset! stateful-device))
+
+(defn dump [stateful-device]
+  (assert (satisfies? StatefulDevice stateful-device))
+  (-dump stateful-device))

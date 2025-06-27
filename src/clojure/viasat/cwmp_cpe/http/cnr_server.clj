@@ -1,6 +1,7 @@
 (ns viasat.cwmp-cpe.http.cnr-server
   "HTTP server and main RingHandler to receive Connection Requests from the ACS... or any other HTTP client with the requisite credentials."
   (:require
+   [cheshire.core :as json]
    [com.stuartsierra.component :as component]
    [reitit.ring :as ring]
    [ring.adapter.jetty :as jetty]
@@ -56,7 +57,13 @@
                                   {:status 204})
                                 :middleware [wrap-catch-exceptions
                                              (stateful-device-lookup-wrapper stateful-device-set)
-                                             wrap-digest-auth]}}]])
+                                             wrap-digest-auth]}}]
+     ["/stateful-devices/:device-id" {:get {:handler
+                                            (fn [{:keys [stateful-device] :as _request}]
+                                              {:status 200
+                                               :body (json/generate-string (stateful-device/dump stateful-device))})
+                                            :middleware [wrap-catch-exceptions
+                                                         (stateful-device-lookup-wrapper stateful-device-set)]}}]])
 
    (ring/create-default-handler
     {:not-found (constantly {:body "Not found" :status 404})})))

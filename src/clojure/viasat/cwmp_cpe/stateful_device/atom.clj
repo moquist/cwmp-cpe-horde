@@ -203,7 +203,8 @@
   (-cnr-now? [this]
     (cnr-now? this))
   (-cnr-reset! [this]
-    (cnr-reset! this)))
+    (cnr-reset! this))
+  (-dump [_] @state))
 
 (def ParameterList-base
   {:Device.DeviceInfo.Manufacturer "cwmp-test-manufacturer"
