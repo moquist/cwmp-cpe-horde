@@ -149,18 +149,28 @@ $ curl -s localhost:9000/stateful-devices/FEFEFE000000 | jq .
   "cnr-at-millis": null,
   "processor-state": {
     "events": [
-      "bootstrap",
-      "boot",
-      "periodic-inform",
-      "periodic-inform",
-      "periodic-inform",
-      "periodic-inform",
-      "periodic-inform",
-      "periodic-inform",
-      "periodic-inform",
-      "periodic-inform"
+      {
+        "event-type": "bootstrap",
+        "event-time": "2025-07-01T14:44:11Z"
+      },
+      {
+        "event-type": "boot",
+        "event-time": "2025-07-01T14:44:11Z"
+      },
+      {
+        "event-type": "connection-request",
+        "event-time": "2025-07-01T14:44:23Z"
+      },
+      {
+        "event-type": "periodic-inform",
+        "event-time": "2025-07-01T14:54:11Z"
+      },
+      {
+        "event-type": "periodic-inform",
+        "event-time": "2025-07-01T15:04:11Z"
+      }
     ],
-    "latest-inform": "2025-06-27T18:54:54Z"
+    "latest-inform": "2025-07-01T15:04:11Z"
   }
 }
 ```

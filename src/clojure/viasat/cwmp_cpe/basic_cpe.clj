@@ -68,44 +68,54 @@
       (or (not millis-since-latest-inform)
           (< interval-seconds millis-since-latest-inform)))))
 
-(defn cwmp-cpe-fn [{:as stateful-device :keys [acs-url]}]
-  (let [{:keys [events value-change-parameter-names]}
+(defn cwmp-cpe-fn [{:as stateful-device :keys [acs-url]} & [inform-session!-fn]]
+  (let [inform-session!-fn (or inform-session!-fn inform-session!)
+        {:keys [events value-change-parameter-names]}
         (stateful-device/get-processor-state stateful-device)]
     (cond
       (stateful-device/cnr-now? stateful-device)
       (do
-        (inform-session! stateful-device acs-url (informs/compose-connection-request stateful-device))
+        (inform-session!-fn stateful-device acs-url (informs/compose-connection-request stateful-device))
         (stateful-device/cnr-reset! stateful-device)
-        (stateful-device/update-processor-state! stateful-device
-                                                 #(-> %
-                                                      (update :events conj :connection-request)
-                                                      (assoc :latest-inform (time-util/now)))))
+        (let [now (time-util/now)]
+          (stateful-device/update-processor-state! stateful-device
+                                                   #(-> %
+                                                        (update :events conj {:event-type :connection-request :event-time now})
+                                                        (assoc :latest-inform now)))))
 
       (seq value-change-parameter-names)
       (do
-        (inform-session! stateful-device acs-url (informs/compose-value-change stateful-device value-change-parameter-names))
-        (stateful-device/update-processor-state! stateful-device
-                                                 #(-> %
-                                                      (dissoc :value-change-parameter-names)
-                                                      (update :events conj :value-change)
-                                                      (assoc :latest-inform (time-util/now)))))
+        (inform-session!-fn stateful-device acs-url (informs/compose-value-change stateful-device value-change-parameter-names))
+        (let [now (time-util/now)]
+          (stateful-device/update-processor-state! stateful-device
+                                                   #(-> %
+                                                        (dissoc :value-change-parameter-names)
+                                                        (update :events conj {:event-type :value-change :event-time now})
+                                                        (assoc :latest-inform now)))))
 
+      ;; BOOTSTRAP has already been done
       (and (seq events)
-           ((set events) :bootstrap))
+           (->> events
+                (map :event-type)
+                set
+                :bootstrap))
       (when (periodic-inform-now? stateful-device)
-        (inform-session! stateful-device acs-url (informs/compose-periodic-inform stateful-device))
-        (stateful-device/update-processor-state! stateful-device
-                                                 #(-> %
-                                                      (update :events conj :periodic-inform)
-                                                      (assoc :latest-inform (time-util/now)))))
+        (inform-session!-fn stateful-device acs-url (informs/compose-periodic-inform stateful-device))
+        (let [now (time-util/now)]
+          (stateful-device/update-processor-state! stateful-device
+                                                   #(-> %
+                                                        (update :events conj {:event-type :periodic-inform :event-time now})
+                                                        (assoc :latest-inform now)))))
 
       :else
       (do
-        (inform-session! stateful-device acs-url (informs/compose-bootstrap-boot stateful-device))
-        (stateful-device/update-processor-state! stateful-device
-                                                 (constantly
-                                                  {:events [:bootstrap :boot]
-                                                   :latest-inform (time-util/now)}))))
+        (inform-session!-fn stateful-device acs-url (informs/compose-bootstrap-boot stateful-device))
+        (let [now (time-util/now)]
+          (stateful-device/update-processor-state! stateful-device
+                                                   (constantly
+                                                    {:events [{:event-type :bootstrap :event-time now}
+                                                              {:event-type :boot :event-time now}]
+                                                     :latest-inform now})))))
 
     (Thread/sleep ^java.lang.Long (+ 10000 (rand-int 5000)))))
 

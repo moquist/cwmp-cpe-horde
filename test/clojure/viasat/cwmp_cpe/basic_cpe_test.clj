@@ -82,7 +82,7 @@
       (when latest-inform-datetime
         (stateful-device/update-processor-state! stateful-device
                                                  #(-> %
-                                                      (assoc :events [::periodic-inform-now?-test])
+                                                      (assoc :events [{:event-type ::periodic-inform-now?-test :event-time latest-inform-datetime}])
                                                       (assoc :latest-inform latest-inform-datetime))))
       (testing description
         (is (expected? (basic-cpe/periodic-inform-now? stateful-device)))))))
