@@ -86,3 +86,27 @@
                                                       (assoc :latest-inform latest-inform-datetime))))
       (testing description
         (is (expected? (basic-cpe/periodic-inform-now? stateful-device)))))))
+
+(defn stateful-device->events [stateful-device]
+  (->> stateful-device
+       :state
+       deref
+       :processor-state
+       :events
+       (mapv :event-type)))
+
+(deftest cwmp-cpe-fn-test
+  (let [periodic-inform-interval-seconds 0
+        use-cases [{:description "bootstrap-boot only happens once"
+                    :device-params {}
+                    :expected-events [:bootstrap :boot]}
+                   {:description "bootstrap-boot is followed by PeriodicInform when expected"
+                    :device-params {"Device.ManagementServer.PeriodicInformInterval" periodic-inform-interval-seconds}
+                    :expected-events [:bootstrap :boot :periodic-inform]}]]
+    (doseq [{:keys [description device-params expected-events]} use-cases
+            :let [stateful-device (stateful-device-atom/stateful-device-atom "fefefe012345" device-params {:acs-url "fake-acs-url"})]]
+      (testing description
+        (basic-cpe/cwmp-cpe-fn stateful-device (constantly nil))
+        (is (= (stateful-device->events stateful-device) [:bootstrap :boot]))
+        (basic-cpe/cwmp-cpe-fn stateful-device (constantly nil))
+        (is (= (stateful-device->events stateful-device) expected-events))))))
