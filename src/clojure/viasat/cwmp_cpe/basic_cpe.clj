@@ -68,8 +68,10 @@
       (or (not millis-since-latest-inform)
           (< interval-seconds millis-since-latest-inform)))))
 
-(defn cwmp-cpe-fn [{:as stateful-device :keys [acs-url]} & [inform-session!-fn]]
+(defn cwmp-cpe-fn [{:as stateful-device :keys [acs-url]} & [{:keys [inform-session!-fn sleep-duration-fn]}]]
   (let [inform-session!-fn (or inform-session!-fn inform-session!)
+        sleep-duration-fn (or sleep-duration-fn
+                              #(+ 10000 (rand-int 5000)))
         {:keys [events value-change-parameter-names]}
         (stateful-device/get-processor-state stateful-device)]
     (cond
@@ -117,6 +119,6 @@
                                                               {:event-type :boot :event-time now}]
                                                      :latest-inform now})))))
 
-    (Thread/sleep ^java.lang.Long (+ 10000 (rand-int 5000)))))
+    (Thread/sleep ^java.lang.Long (sleep-duration-fn))))
 
 

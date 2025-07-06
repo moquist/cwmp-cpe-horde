@@ -96,7 +96,9 @@
        (mapv :event-type)))
 
 (deftest cwmp-cpe-fn-test
-  (let [periodic-inform-interval-seconds 0
+  (let [periodic-inform-interval-seconds -1
+        test-options {:inform-session!-fn (constantly nil)
+                      :sleep-duration-fn (constantly 0)}
         use-cases [{:description "bootstrap-boot only happens once"
                     :device-params {}
                     :expected-events [:bootstrap :boot]}
@@ -106,7 +108,7 @@
     (doseq [{:keys [description device-params expected-events]} use-cases
             :let [stateful-device (stateful-device-atom/stateful-device-atom "fefefe012345" device-params {:acs-url "fake-acs-url"})]]
       (testing description
-        (basic-cpe/cwmp-cpe-fn stateful-device (constantly nil))
-        (is (= (stateful-device->events stateful-device) [:bootstrap :boot]))
-        (basic-cpe/cwmp-cpe-fn stateful-device (constantly nil))
-        (is (= (stateful-device->events stateful-device) expected-events))))))
+        (basic-cpe/cwmp-cpe-fn stateful-device test-options)
+        (is (= [:bootstrap :boot] (stateful-device->events stateful-device)))
+        (basic-cpe/cwmp-cpe-fn stateful-device test-options)
+        (is (= expected-events (stateful-device->events stateful-device)))))))
