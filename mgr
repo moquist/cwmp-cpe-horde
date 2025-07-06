@@ -14,13 +14,25 @@ export IMAGE_NAME=${IMAGE_NAME:-${IMAGE_BASE}:$IMAGE_VERSION}
 
 CONTAINER_NAME=${CONTAINER_NAME:-${USER}-cwmp-cpe-horde}
 
+if [ "$(command -v docker)" ]; then
+    CONTAINER_EXEC=docker
+elif [ "$(command -v podman)" ]; then
+    CONTAINER_EXEC=podman
+else
+    no_containers_for_you() {
+        >&2 echo "ERROR: neither docker nor podman found on \$PATH"
+        exit 1
+    }
+    CONTAINER_EXEC=no_containers_for_you
+fi
+
 cd "${REPO_ROOT}"
 
 function print_help() {
     cat <<EOF
 Usage:
 
-  mgr build                       => Run tests and build a voom-versioned docker image.
+  mgr build                       => Run tests and build a voom-versioned docker/podman image.
   mgr check                       => lint, cljfmt, and run tests
   mgr cljfmt                      => Run cljfmt on uncommitted code. Set CLJFMT_ALL=1 to run cljfmt over the entire codebase.
   mgr help                        => Display this message
@@ -28,7 +40,7 @@ Usage:
   mgr req                         => Check system requirements and print warnings.
   mgr run                         => Run cwmp-client-horde from source. Typical example: CONFIG_FILE_PATH=config.edn ./mgr run
   mgr test                        => Run all unit tests.
-  mgr up                          => Run cwmp-client-horde docker image. Typical example: IMAGE_NAME=cwmp-cpe-horde:20250607_195436-gfbcf556 CONFIG_FILE_PATH=config.edn ./mgr up
+  mgr up                          => Run cwmp-client-horde docker/podman image. Typical example: IMAGE_NAME=cwmp-cpe-horde:20250607_195436-gfbcf556 CONFIG_FILE_PATH=config.edn ./mgr up
 EOF
 }
 
@@ -45,7 +57,7 @@ function build() {
     lint
     cljfmt
     # unit-tests are run in the docker build to maximize assurance
-    docker build \
+    ${CONTAINER_EXEC} build \
            -t "${IMAGE_NAME}" \
            .
     >&2 echo "FYI, IMAGE_NAME=${IMAGE_NAME}"
@@ -62,7 +74,7 @@ function do-check() {
 }
 
 function down() {
-    docker rm -v -f $CONTAINER_NAME
+    ${CONTAINER_EXEC} rm -v -f $CONTAINER_NAME
 }
 
 function lint() {
@@ -73,7 +85,6 @@ function req() {
     type -P bb &> /dev/null || warn "WARNING: bb (babashka) not found"
     type -P clj &> /dev/null || warn "WARNING: clj (Clojure runner) not found"
     type -P clj-kondo &> /dev/null || warn "WARNING: clj-kondo not found"
-    type -P docker &> /dev/null || warn "WARNING: docker not found"
 }
 
 function run() {
@@ -89,7 +100,7 @@ function up() {
         die "CONFIG_FILE_PATH must be specified and must be a regular file"
     fi
     down >& /dev/null
-    docker run \
+    ${CONTAINER_EXEC} run \
         -d \
         --name $CONTAINER_NAME \
         -e CONFIG_FILE_PATH=/tmp/config.edn \
