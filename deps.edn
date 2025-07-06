@@ -17,7 +17,7 @@
   :dev {:extra-paths ["test/clojure"]},
   :kaocha
   {:extra-deps
-   {lambdaisland/kaocha {:mvn/version "1.88.1376"}
+   {lambdaisland/kaocha {:mvn/version "1.91.1392"}
     nubank/matcher-combinators {:mvn/version "3.9.1", :exclusions [midje/midje]}
     ;; make --watch quiet
     ;; lambdaisland/kaocha depends on nextjournal/beholder for directory watching,
