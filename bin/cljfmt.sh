@@ -5,8 +5,8 @@ set -euo pipefail
 
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >& /dev/null && pwd )
 
-function __cljfmt() {
-    clojure -Sdeps '{:deps {cljfmt/cljfmt {:mvn/version "0.9.0"}}}' -M -m cljfmt.main $@
+function _cljfmt() {
+    clojure -Sdeps '{:deps {dev.weavejester/cljfmt {:mvn/version "0.13.1"}}}' -M -m cljfmt.main $@
 }
 
 _cljfmt=__cljfmt
@@ -15,6 +15,5 @@ files="$@"
 # check all modified or untracked files if no file list is provided
 all_arg=""
 [[ -z ${CLJFMT_ALL+x} ]] || all_arg="--cached"
-[[ -z "${files}" ]] && files=$(git ls-files ${all_arg} --modified --others --exclude-standard '*.clj' '*.cljc' '*.cljs' '*.edn' | grep -v \\.clj-kondo/)
-indents_config_file="${script_dir}/cljfmt-indents.clj"
-${_cljfmt} fix --indents "${indents_config_file}" ${files}
+[[ -z "${files}" ]] && files=$(git ls-files ${all_arg} --modified --others --exclude-standard '*.clj' '*.edn' | grep -v \\.clj-kondo/)
+_cljfmt fix ${files}
