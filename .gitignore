@@ -27,3 +27,4 @@ pom.xml.asc
 **.swp
 **/.monoscope/.cache
 /.tmp
+.envrc
