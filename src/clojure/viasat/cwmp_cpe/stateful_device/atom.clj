@@ -148,7 +148,9 @@
     (let [{:keys [DeviceId cwmp-cpe-fn cnr-host cnr-port]} config
           connection-request-url {"Device.ManagementServer.ConnectionRequestURL"
                                   ;; TODO: move /cpes/ into configs to avoid hard-coded dependency with ring-handler
-                                  (format "%s:%s/cpes/%s"
+                                  ;; The Connection Request MUST make use of HTTP, not HTTPS. The associated URL MUST be an HTTP URL.
+                                  ;; 3.2.2.2 HTTP Specific Connection Request Requirements
+                                  (format "http://%s:%s/cpes/%s"
                                           cnr-host
                                           cnr-port
                                           (:SerialNumber DeviceId))}]
