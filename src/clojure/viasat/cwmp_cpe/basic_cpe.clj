@@ -37,21 +37,22 @@
                (stateful-device/get-serial-number stateful-device)
                (summarize-util/summarize-tr069-message inform-body))
     (loop [acs-message (send-request SerialNumber url (assoc request-base :body inform-body))
-           session-end-pending? false]
+           cpe-has-sent-empty-request? false]
       (log/debug :inform-session!-received
                  (stateful-device/get-serial-number stateful-device)
-                 (summarize-util/summarize-tr069-message acs-message))
-      (let [{:keys [message session-end-offer?]} (handlers/handle-acs-message stateful-device acs-message)]
+                 (summarize-util/summarize-tr069-message acs-message)
+                 :cpe-has-sent-empty-request? cpe-has-sent-empty-request?)
+      (let [{:keys [message acs-has-sent-empty-message?]} (handlers/handle-acs-message stateful-device acs-message)]
         (log/debug :inform-session!-next
                    (stateful-device/get-serial-number stateful-device)
                    (summarize-util/summarize-tr069-message message)
-                   :session-end-offer? session-end-offer?)
+                   :acs-has-sent-empty-message? acs-has-sent-empty-message?)
         (cond
           message (recur (send-request SerialNumber url (assoc request-base :body message))
                          ;; once the CPE has sent an empty request, hold that state until the end of the session
                          ;; 3.7.2.4 Session Termination
-                         session-end-pending?)
-          session-end-pending? :inform-session!-done
+                         cpe-has-sent-empty-request?)
+          cpe-has-sent-empty-request? :inform-session!-done
           :else (recur (send-request SerialNumber url request-base)
                        ;; initiate session termination because "the CPE has no further requests to send the ACS"
                        ;; 3.7.2.4 Session Termination

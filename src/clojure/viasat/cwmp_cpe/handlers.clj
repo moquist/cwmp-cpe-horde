@@ -65,7 +65,7 @@
       (= 200 status) (acs-message->rpc-method acs-message)
       ;; Whenever the ACS sends an empty HTTP response, it MUST use the “204 (No Content)” HTTP status code.
       ;; 3.4.6 Additional HTTP Requirements
-      (= 204 status) ::session-end-offer
+      (= 204 status) ::acs-has-sent-empty-message
       (<= 500 status) (throw (ex-info (format "HTTP status from ACS is %s" status)
                                       {:cause :http-status-error-from-acs
                                        :status status
@@ -77,10 +77,10 @@
              rpc-method
              acs-message))
 
-(defmethod handle-acs-message ::session-end-offer
+(defmethod handle-acs-message ::acs-has-sent-empty-message
   [stateful-device acs-message]
-  (log-handler-event stateful-device acs-message ::session-end-offer)
-  {:session-end-offer? true})
+  (log-handler-event stateful-device acs-message ::acs-has-sent-empty-message)
+  {:acs-has-sent-empty-message? true})
 
 (defmethod handle-acs-message :cwmp:InformResponse
   [stateful-device acs-message]
