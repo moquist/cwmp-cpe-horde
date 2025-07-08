@@ -63,6 +63,8 @@
     (cond
       ;; XXX handle TR-069 errors, which are HTTP 200s and in the body
       (= 200 status) (acs-message->rpc-method acs-message)
+      ;; Whenever the ACS sends an empty HTTP response, it MUST use the “204 (No Content)” HTTP status code.
+      ;; 3.4.6 Additional HTTP Requirements
       (= 204 status) ::session-end-offer
       (<= 500 status) (throw (ex-info (format "HTTP status from ACS is %s" status)
                                       {:cause :http-status-error-from-acs

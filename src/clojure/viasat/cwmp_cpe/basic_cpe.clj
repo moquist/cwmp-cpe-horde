@@ -48,9 +48,14 @@
                    :session-end-offer? session-end-offer?)
         (cond
           message (recur (send-request SerialNumber url (assoc request-base :body message))
-                         false)
+                         ;; once the CPE has sent an empty request, hold that state until the end of the session
+                         ;; 3.7.2.4 Session Termination
+                         session-end-pending?)
           session-end-pending? :inform-session!-done
-          :else (recur (send-request SerialNumber url request-base) true))))))
+          :else (recur (send-request SerialNumber url request-base)
+                       ;; initiate session termination because "the CPE has no further requests to send the ACS"
+                       ;; 3.7.2.4 Session Termination
+                       true))))))
 
 (defn periodic-inform-now? [stateful-device]
   (let [{:keys [latest-inform]} (stateful-device/get-processor-state stateful-device)
